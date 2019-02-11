@@ -9,6 +9,7 @@
 		<div id="namesWrapper">
 			<h2>Chat.io</h2>
 			<p>Create Username:</p>
+			<div id="error"></div>
 			<form id="usernameForm">
 				<input type="text" size="35" id="username">
 				<input type="submit" value="Einloggen">
@@ -16,6 +17,7 @@
 		</div>
 		<div id="mainWrapper">
 			<h2>Chat.io</h2>
+			<div id="youAre"></div>
 			<div id="chatWrapper">
 				<div id="chatWindow">
 					<h3>Chat-Window</h3>
@@ -26,6 +28,7 @@
 				</form>
 			</div>
 			<div id="userWrapper">
+				<h3>Angemeldete Benutzer</h3>
 				<div id="users"></div>
 			</div>
 		</div>
@@ -41,11 +44,54 @@
 			var $msg = $('#message');
 			var $chat = $('#chatWindow');
 			
+			var $usernameForm = $('#usernameForm');
+			var $users = $('#users');
+			var $username = $('#username');
+			
+			var $error = $('#error');
+			var $youAre =  $('#youAre');
+			var username_backup;
+			
+			//Initialisierung
+			$('#mainWrapper').hide();
+			
+			$usernameForm.submit(function(event){
+				event.preventDefault();
+				console.log('UsernameForm submitted:' + $username.val());
+				
+				html = '<p>You are ' + $username.val() + '</p>';
+				$youAre.html(html);
+				console.log(html);
+				console.log($youAre.val());
+				
+				socket.emit('new user', $username.val(), function(data){
+					if(data){
+						$('#namesWrapper').hide();
+						$('#mainWrapper').show();
+					}else{
+						$error.html('Username ist schon vergeben');
+					}
+				});
+				
+				username = $username.val();
+			});
+			
+			socket.on('usernames', function(data){
+				var html = '';
+				for(i=0; i<data.length;i++){
+					html += data[i] + '<br>';
+				}
+				$users.html(html);
+			});
+			
 			$msgForm.submit(function(event){
+				var completeMsg = '';
+				
 				event.preventDefault();
 				console.log('MessageForm submitted:' + $msg.val());
 				
-				socket.emit('send message', $msg.val());
+				completeMsg = $username.val() + ": " + $msg.val();
+				socket.emit('send message', completeMsg);
 				
 				console.log('Init Message-Field');
 				$msg.val('');
